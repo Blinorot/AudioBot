@@ -1,25 +1,22 @@
-import nemo.collections.tts as nemo_tts
+import torch
+from pathlib import Path
+from transformers import FastSpeech2ConformerTokenizer, FastSpeech2ConformerModel, FastSpeech2ConformerHifiGan
 
 
 def init_tts_model(device):
-    # Load mel spectrogram generator
-    spec_generator = nemo_tts.models.FastPitchModel.from_pretrained("tts_en_fastpitch",
-                                                                    map_location=device)
-    # Load vocoder
-    vocoder = nemo_tts.models.HifiGanModel.from_pretrained(model_name="tts_en_hifigan",
-                                                           map_location=device)
-    
-    spec_generator.eval()
-    vocoder.eval()
+    tokenizer = FastSpeech2ConformerTokenizer.from_pretrained("espnet/fastspeech2_conformer")
+    spec_generator = FastSpeech2ConformerModel.from_pretrained("espnet/fastspeech2_conformer")
+    vocoder = FastSpeech2ConformerHifiGan.from_pretrained("espnet/fastspeech2_conformer_hifigan")
    
-    return spec_generator, vocoder
+    return spec_generator, tokenizer, vocoder
 
 
-def run_tts_model(text, spec_generator, vocoder):
+def run_tts_model(text, spec_generator, tokenizer, vocoder):
     # Generate audio
-    parsed = spec_generator.parse(text)
-    spectrogram = spec_generator.generate_spectrogram(tokens=parsed)
-    audio = vocoder.convert_spectrogram_to_audio(spec=spectrogram)
-    # Save the audio to disk in a file called speech.wav
-    #sf.write("speech.wav", audio.to('cpu').numpy(), 22050)
+    inputs = tokenizer(text, return_tensors="pt")
+    input_ids = inputs["input_ids"]
+    output_dict = spec_generator(input_ids, return_dict=True)
+    spectrogram = output_dict["spectrogram"]
+
+    audio = vocoder(spectrogram)
     return audio
