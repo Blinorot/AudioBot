@@ -8,7 +8,7 @@ __pycache__/
 
 # Distribution / packaging
 .Python
-env/
+*env/
 build/
 develop-eggs/
 dist/
@@ -86,7 +86,6 @@ celerybeat-schedule
 .venv
 venv/
 ENV/
-bot_env/
 
 # Spyder project settings
 .spyderproject
@@ -101,16 +100,12 @@ bot_env/
 # mypy
 .mypy_cache/
 
-# input data, saved log, checkpoints
+# input data, saved log, checkpoints, hydra outputs
 data/
-index/
 input/
 saved/
-results/
-waveglow/pretrained_model/
 wandb/
 outputs/
-src/mixtral_offloading
 
 # editor, os cache directory
 .vscode/

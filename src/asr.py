@@ -1,6 +1,7 @@
-import torch
 from pathlib import Path
-from transformers import WhisperProcessor, WhisperForConditionalGeneration
+
+import torch
+from transformers import WhisperForConditionalGeneration, WhisperProcessor
 
 
 def init_asr_model(device):
@@ -18,6 +19,6 @@ def run_asr_model(asr_model, processor, audio):
     transcription = processor.batch_decode(predicted_ids, skip_special_tokens=True)
 
     text_output = transcription[0]
-    
+
     print("ASR output:", text_output)
     return text_output

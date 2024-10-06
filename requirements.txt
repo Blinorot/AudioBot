@@ -1,3 +1,9 @@
-torchaudio
-nemo_toolkit[all]
-pyctcdecode
+torch==2.2.0
+torchaudio==2.2.0
+transformers==4.40.2
+groq
+g2p-en
+
+isort
+black
+pre-commit
