@@ -8,55 +8,57 @@ from src.llm import init_llm, run_llm
 from src.tts import init_tts_model, run_tts_model
 
 
-def init_all_models(device="cpu"):
-    asr_model, processor = init_asr_model(device)
-    spec_generator, spec_tokenizer, vocoder = init_tts_model(device)
+def init_all_models(config):
+    asr_pipeline = init_asr_model(config)
+    tokenizer, spec_generator, vocoder, max_words_per_query = init_tts_model(config)
     client, history = init_llm()
 
     all_models = [
-        asr_model,
-        processor,
+        asr_pipeline,
+        tokenizer,
         spec_generator,
-        spec_tokenizer,
         vocoder,
+        max_words_per_query,
         client,
     ]
     return all_models, history
 
 
-def user_audio_input_handler(user_audio_input, asr_model, processor):
-    return run_asr_model(asr_model, processor, user_audio_input)
+def user_audio_input_handler(user_audio_input, asr_pipeline):
+    return run_asr_model(asr_pipeline, user_audio_input)
 
 
 def user_text_input_handler(user_text_input, history, client):
     return run_llm(user_text_input, history, client)
 
 
-def user_output_handler(user_text_output, spec_generator, spec_tokenizer, vocoder):
-    return run_tts_model(user_text_output, spec_generator, spec_tokenizer, vocoder)
+def user_output_handler(
+    user_text_output, tokenizer, spec_generator, vocoder, max_words_per_query
+):
+    return run_tts_model(
+        user_text_output, tokenizer, spec_generator, vocoder, max_words_per_query
+    )
 
 
 @torch.inference_mode()
-def full_handler(all_models, history, device, user_audio_input):
+def full_handler(all_models, history, user_audio_input):
     (
-        asr_model,
-        ctc_decoder,
+        asr_pipeline,
+        tokenizer,
         spec_generator,
-        spec_tokenizer,
         vocoder,
+        max_words_per_query,
         client,
     ) = all_models
 
-    user_text_input = user_audio_input_handler(user_audio_input, asr_model, ctc_decoder)
+    user_text_input = user_audio_input_handler(user_audio_input, asr_pipeline)
+    print("Text Input:", user_text_input)
+
     user_text_output, history = user_text_input_handler(
         user_text_input, history, client
     )
-    user_audio_output = user_output_handler(
-        user_text_output, spec_generator, spec_tokenizer, vocoder
+
+    user_audio_output_generator = user_output_handler(
+        user_text_output, tokenizer, spec_generator, vocoder, max_words_per_query
     )
-    # torchaudio.save(f"data/audio_{uuid.uuid4()}.wav", user_audio_output, sample_rate=22050)
-
-    print("Text Input:", user_text_input)
-    print("Audio Output Shape:", user_audio_output.shape)
-
-    return user_audio_output, history
+    return user_audio_output_generator, history

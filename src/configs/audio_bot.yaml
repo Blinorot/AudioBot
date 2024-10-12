@@ -1,0 +1,17 @@
+device: cpu
+asr:
+  model_id: openai/whisper-tiny.en
+tts:
+  max_words_per_query: 8
+llm:
+  max_output_tokens: 1000
+stream_reader:
+  source: hw:0
+  format: alsa
+  chunk_size: 16000
+  sample_rate: 16000
+stream_writer:
+  dst: default
+  format: alsa
+  chunk_size: 256
+  sample_rate: 22050

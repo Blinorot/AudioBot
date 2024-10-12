@@ -1,8 +1,12 @@
 torch==2.2.0
 torchaudio==2.2.0
 transformers==4.40.2
+numpy==1.26.4
 groq
 g2p-en
+hydra-core
+accelerate
+datasets
 
 isort
 black

@@ -8,8 +8,6 @@ from torchaudio.io import StreamReader, StreamWriter
 
 from src.handlers import full_handler
 
-logger = logging.getLogger(__file__)
-
 
 def vad_checking(chunk, sample_rate):
     vad_chunk = vad(chunk, sample_rate=sample_rate)
@@ -55,28 +53,31 @@ def audio_stream(
         streamer.remove_stream(0)
 
 
-def init_stream(
-    all_models,
-    history,
-    device,
-    source="hw:0",
-    format="alsa",
-    chunk_size=16000,
-    sample_rate=16000,
-):
+def init_stream(all_models, history, config):
     ctx = mp.get_context("spawn")
     manager = ctx.Manager()
     chunk_queue = manager.Queue(maxsize=0)
     stream_init_queue = manager.Queue(maxsize=0)
     streaming_process = ctx.Process(
         target=audio_stream,
-        args=(stream_init_queue, chunk_queue, source, format, chunk_size, sample_rate),
+        args=(
+            stream_init_queue,
+            chunk_queue,
+            config.stream_reader.source,
+            config.stream_reader.format,
+            config.stream_reader.chunk_size,
+            config.stream_reader.sample_rate,
+        ),
     )
 
     user_chunks = []
 
-    stream_writer = StreamWriter(dst="default", format="alsa")
-    stream_writer.add_audio_stream(sample_rate=22050, num_channels=1)
+    stream_writer = StreamWriter(
+        dst=config.stream_writer.dst, format=config.stream_writer.format
+    )
+    stream_writer.add_audio_stream(
+        sample_rate=config.stream_writer.sample_rate, num_channels=1
+    )
     stream_writer.open()
 
     streaming_process.start()
@@ -91,15 +92,20 @@ def init_stream(
 
             # send it to ASR, LLM and TTS
             user_full = torch.cat(user_chunks, dim=-1)
-            user_audio_output, history = full_handler(
-                all_models, history, device, user_full
+            user_audio_output_generator, history = full_handler(
+                all_models, history, user_full
             )
 
-            user_audio_output = user_audio_output[0].unsqueeze(-1)
-            num_frames = user_audio_output.shape[0]
-            for i in range(0, num_frames, 256):
-                stream_writer.write_audio_chunk(0, user_audio_output[i : i + 256])
-            time.sleep(1 + num_frames / 22050)  # to avoid ASR reading an output
+            for user_audio_output in user_audio_output_generator:
+                user_audio_output = user_audio_output[0].unsqueeze(-1)
+                num_frames = user_audio_output.shape[0]
+                for i in range(0, num_frames, config.stream_writer.chunk_size):
+                    stream_writer.write_audio_chunk(
+                        0, user_audio_output[i : i + config.stream_writer.chunk_size]
+                    )
+            time.sleep(
+                1 + num_frames / config.stream_writer.sample_rate
+            )  # to avoid ASR reading an output
 
             # init next user input
             user_chunks = []
