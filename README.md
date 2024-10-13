@@ -10,7 +10,7 @@
 
 ## About
 
-This repository contain an implementation of an intelligent voice assistant. The solution is based on the combination of Automatic Speech Recognition, Text To Speech, and LLM models.
+This repository contains an implementation of an intelligent voice assistant. The solution is based on the combination of Automatic Speech Recognition, Text To Speech, and LLM models.
 
 ## Installation
 
