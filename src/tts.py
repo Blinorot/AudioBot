@@ -20,20 +20,23 @@ def init_tts_model(config):
         "espnet/fastspeech2_conformer_hifigan"
     )
 
+    return tokenizer, spec_generator, vocoder
+
+
+def run_tts_model(text, tokenizer, spec_generator, vocoder, config):
     max_words_per_query = config.tts.max_words_per_query
 
-    return tokenizer, spec_generator, vocoder, max_words_per_query
-
-
-def run_tts_model(text, tokenizer, spec_generator, vocoder, max_words_per_query):
     text_partitions = text.split()
+    returned_partitions = 0
     number_of_partitions = len(text_partitions) // max_words_per_query
     for i in range(number_of_partitions + 1):
         if i * max_words_per_query == len(text_partitions):
             break
         query = text_partitions[i * max_words_per_query : (i + 1) * max_words_per_query]
+        returned_partitions += len(query)
+
         query = " ".join(query)
-        print(len(text_partitions), query)
+        print(f"{returned_partitions}/{len(text_partitions)}: {query}")
 
         # Generate audio
         inputs = tokenizer(query, return_tensors="pt")

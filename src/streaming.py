@@ -1,12 +1,13 @@
-import logging
 import multiprocessing as mp
 import time
+from pathlib import Path
 
 import torch
+import wget
 from torchaudio.functional import vad
 from torchaudio.io import StreamReader, StreamWriter
 
-from src.handlers import full_handler
+from src.handlers import KWS_URL, full_handler
 
 
 def vad_checking(chunk, sample_rate):
@@ -17,9 +18,20 @@ def vad_checking(chunk, sample_rate):
         return 0
 
 
+def get_kws():
+    data_path = Path(__file__).absolute().resolve().parent.parent / "data"
+    data_path.mkdir(exist_ok=True, parents=True)
+    kws_path = data_path / "kws.pth"
+    if not kws_path.exists():
+        wget.download(KWS_URL, str(kws_path))
+    kws = torch.jit.load(kws_path, map_location="cpu")
+    return kws
+
+
 def audio_stream(
     init_queue: mp.Queue, queue: mp.Queue, source, format, chunk_size, sample_rate
 ):
+    kws = get_kws()
     streamer = StreamReader(src=source, format=format)
     while init_queue.get() == 1:  # main process sent the signal to start
         streamer.add_basic_audio_stream(
@@ -31,12 +43,25 @@ def audio_stream(
         user_talked = 0
         vad_limit = 3
 
+        query_started = 0
+
         print("Start audio streaming")
         while True:
             (chunk_,) = next(stream_iterator)
             chunk_data = chunk_.data
             chunk_data = chunk_data.sum(dim=-1)  # to mono
             chunk_data = chunk_data.view(1, -1)
+
+            if not query_started:
+                # check that the query is started
+                with torch.inference_mode():
+                    keyword_proba = kws(chunk_data)
+                if keyword_proba > 0.7:
+                    print("Keyword Detected")
+                    query_started = 1
+                else:
+                    continue
+
             queue.put(chunk_data)
             vad_check = vad_checking(chunk_data, sample_rate=sample_rate)
             if vad_check:
@@ -93,19 +118,26 @@ def init_stream(all_models, history, config):
             # send it to ASR, LLM and TTS
             user_full = torch.cat(user_chunks, dim=-1)
             user_audio_output_generator, history = full_handler(
-                all_models, history, user_full
+                all_models, history, user_full, config
             )
 
+            start_time = time.perf_counter()
+            total_num_frames = 0
             for user_audio_output in user_audio_output_generator:
                 user_audio_output = user_audio_output[0].unsqueeze(-1)
                 num_frames = user_audio_output.shape[0]
+                total_num_frames += num_frames
                 for i in range(0, num_frames, config.stream_writer.chunk_size):
                     stream_writer.write_audio_chunk(
                         0, user_audio_output[i : i + config.stream_writer.chunk_size]
                     )
-            time.sleep(
-                1 + num_frames / config.stream_writer.sample_rate
-            )  # to avoid ASR reading an output
+            audio_time = total_num_frames / config.stream_writer.sample_rate
+            end_time = time.perf_counter()
+
+            diff_time = audio_time - (end_time - start_time)
+            if diff_time > 0:
+                print(audio_time, diff_time)
+                time.sleep(1 + diff_time)  # to avoid ASR reading an output
 
             # init next user input
             user_chunks = []

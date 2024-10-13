@@ -4,7 +4,8 @@ asr:
 tts:
   max_words_per_query: 8
 llm:
-  max_output_tokens: 1000
+  max_tokens: 1024
+  max_history: 100
 stream_reader:
   source: hw:0
   format: alsa

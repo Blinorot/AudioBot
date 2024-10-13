@@ -67,9 +67,11 @@ python3 run.py stream_reader.source=YOUR_MICROPHONE \
     stream_writer.format=YOUR_FORMAT
 ```
 
+You can also change other parameters via Hydra options. See `src/configs/audio_bot.yaml`.
+
 ## Credits
 
-[HuggingFace](https://huggingface.co/) was used for [ASR](https://huggingface.co/spaces/openai/whisper) and TTS models ([Spectrogram Generator](https://huggingface.co/espnet/fastspeech2_conformer) and [Vocoder](https://huggingface.co/espnet/fastspeech2_conformer_hifigan)). [Groq API](https://groq.com/) with [llama-3-8b-8192](https://ai.meta.com/blog/meta-llama-3/) model was used for LLM.
+[HuggingFace](https://huggingface.co/) was used for [ASR](https://huggingface.co/spaces/openai/whisper) and TTS models ([Spectrogram Generator](https://huggingface.co/espnet/fastspeech2_conformer) and [Vocoder](https://huggingface.co/espnet/fastspeech2_conformer_hifigan)). [Groq API](https://groq.com/) with [llama-3-8b-8192](https://ai.meta.com/blog/meta-llama-3/) model was used for LLM. The KWS model is taken from the 2022 version of the [HSE DLA Course](https://github.com/markovka17/dla).
 
 ## License
 
