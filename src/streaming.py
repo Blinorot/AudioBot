@@ -84,8 +84,7 @@ def audio_stream(
                 user_talked = True
             if user_talked and vad_counts >= vad_limit:
                 break
-            # if vad_counts > 5:
-            #    break
+
         queue.put(SIG_STOP)  # stop criteria for main process loop
         print("End of the user input")
         streamer.remove_stream(0)  # remove stream with id=0
