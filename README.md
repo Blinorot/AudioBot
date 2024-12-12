@@ -12,6 +12,8 @@
 
 This repository contains an implementation of an intelligent voice assistant. The solution is based on the combination of Automatic Speech Recognition, Text To Speech, and LLM models.
 
+See the [LauzHack Workshop](https://youtu.be/rK4I-F8Y6pw) with the discussion on how to create intelligent voice assistants.
+
 ## Installation
 
 To install the assistant, follow these steps:
