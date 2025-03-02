@@ -10,9 +10,13 @@
 
 ## About
 
-This repository contains an implementation of an intelligent voice assistant. The solution is based on the combination of Automatic Speech Recognition, Text To Speech, and LLM models.
+This repository contains an implementation of an intelligent voice assistant. The solution is based on the combination of Automatic Speech Recognition (ASR), Text To Speech (TTS), and Large Language Models (LLM) systems.
 
-See the [LauzHack Workshop](https://youtu.be/rK4I-F8Y6pw) with the discussion on how to create intelligent voice assistants.
+The assistant is activated using a Keyword-Spotting system (KWS) with `sheila` as a target word. Then, the user says the query and an ASR model converts speech query into text. The text query is given as input to an LLM, and its response is converted back to audio using a TTS system. After the audio playback is finished, the user can continue the dialogue. The LLM preserves the history of the chat.
+
+The version with default choice of models works fast even on CPU! For better transcription quality, consider using a different ASR model from HuggingFace (e.g. `openai/whisper-large-v2` with a GPU instead of CPU to make it work fast enough).
+
+See the [LauzHack Workshop](https://youtu.be/rK4I-F8Y6pw) with the discussion on how to create intelligent voice assistants and this repository (also see [Slides](https://docs.google.com/presentation/d/1r0vdgrl7nbSjNQcszLk_A12jlArDUiuESHsYh40yaDo/edit?usp=sharing)).
 
 ## Installation
 
@@ -40,7 +44,7 @@ To install the assistant, follow these steps:
    python3 -m venv project_env
 
    # activate env
-   source project_env
+   source project_env/bin/activate
    ```
 
 1. Install all required packages
@@ -59,17 +63,24 @@ To install the assistant, follow these steps:
 
 ## How To Use
 
-To record and play sound, you need to define your hardware settings. See more in the [PyTorch documentation](https://pytorch.org/audio/2.2.0/generated/torio.io.StreamingMediaDecoder.html#torio.io.StreamingMediaDecoder) (information about `ffmpeg` specifically) and [this tutorial](https://pytorch.org/audio/2.4.0/tutorials/streamreader_advanced_tutorial.html). Usually, the format is `alsa` for linux systems and `avfoundation` for mac systems.
+To record and play sound, you need to define your hardware settings. See more in the [PyTorch documentation](https://pytorch.org/audio/2.2.0/generated/torio.io.StreamingMediaDecoder.html#torio.io.StreamingMediaDecoder) (information about `ffmpeg` specifically) and [this tutorial](https://pytorch.org/audio/2.4.0/tutorials/streamreader_advanced_tutorial.html). Usually, the format is `alsa` for Linux systems and `avfoundation` for Mac systems. For the reader source and writer dst, the `default` option usually works (so it might be enough to change the format only in your case).
 
 When the hardware is known, you can start AI AudioBot using this command:
 
 ```bash
 python3 run.py stream_reader.source=YOUR_MICROPHONE \
     stream_reader.format=YOUR_FORMAT \
+    stream_writer.dst=YOUR_LOUDSPEAKER \
     stream_writer.format=YOUR_FORMAT
 ```
 
-You can also change other parameters via Hydra options. See `src/configs/audio_bot.yaml`.
+You can also change other parameters via Hydra options. See `src/configs/audio_bot.yaml`. For example, you can change the maximum number of output tokens and LLM model:
+
+```bash
+python3 run.py llm.model_id="mixtral-8x7b-32768" llm.max_tokens=256
+```
+
+Use `Keyboard Interrupt` (`ctrl+C`) to stop the assistant.
 
 ## Credits
 

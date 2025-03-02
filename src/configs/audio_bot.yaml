@@ -6,8 +6,9 @@ tts:
 llm:
   max_tokens: 1024
   max_history: 100
+  model_id: "llama3-8b-8192"
 stream_reader:
-  source: hw:0
+  source: default
   format: alsa
   chunk_size: 16000
   sample_rate: 16000
